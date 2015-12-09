@@ -13,8 +13,8 @@ def GetCircleCoordinates(center,radius, precision):
     tempX = 0.0
     tempY = 0.0
     radiusSquared = radius * radius
-    for currentX in range(-1 * radius * precision, radius * precision): # loops throught from 0 to the radius with a precision
-        tempX = (currentX / precision) # sets the x coordinate with a precision
+    for step in range(-1 * precision, precision): # loops throught from 0 to the radius with a precision
+        tempX = ((step * radius) / precision) # sets the x coordinate with a precision
         tempY = math.sqrt(radiusSquared - math.pow(tempX, 2)) # calculates the value of y given a radius and a known x coordinate
         x.append(tempX)
         y.append(tempY) #place the calculated values in the array
@@ -51,7 +51,7 @@ def Strip(circle, domainOrRange, min, max):
     return [trimmedDomain, trimmedRange]
 #OA and A'O
 def Distance(x1,y1,x2,y2):
-    return sqrt(pow(x1-x2, 2) + pow(y1-y2,2))
+    return math.sqrt(pow(x1-x2, 2) + pow(y1-y2,2))
 def QuadraticEquation(a,b,c):
     discriminant = b**2-4*a*c
     if (discriminant < 0):
@@ -116,22 +116,59 @@ def plotCircle(circle, format):
     plt.plot(circle[Domain], circle[Range], format)
 def plotLineSegment(Start, End, format):
     plt.plot([Start[Domain], End[Domain]], [Start[Range], End[Range]], format)
-
-
-plt.axis([0,10,0,10])
-center = [5,5]
-radius = 3
+def DistancePoints(Coordinate1, Coordinate2):
+    return Distance(Coordinate1[Domain], Coordinate1[Range], Coordinate2[Domain], Coordinate2[Range])
+def TrimCircle(majorRadius, majorCenter, minorCircle):
+    trimmedMinorCircleX = []
+    trimmedMinorCircleY = []
+    ReorderedX = []
+    ReorderedY = []
+    maxDistance = 0
+    intercepts = [0,0]
+    length = len(minorCircle[0])
+    for point in range(0, length):
+        #intercepts have the longest distance
+        if InCircle(majorRadius, majorCenter, [minorCircle[Domain][point], minorCircle[Range][point]]):# is the "point" in the circle
+            trimmedMinorCircleX.append(minorCircle[Domain][point])
+            trimmedMinorCircleY.append(minorCircle[Range][point]) #add the point to the trimmed lists
+        #order the array by the intercepts
+        #intercepts are the points with the longest distance!
+    for point in range(0, len(trimmedMinorCircleX)):
+        point1 = [trimmedMinorCircleX[point], trimmedMinorCircleY[point]]
+        point2 = [trimmedMinorCircleX[(point - 1) % len(trimmedMinorCircleX)], trimmedMinorCircleY[(point - 1) % len(trimmedMinorCircleY)]]
+        thisDistance = DistancePoints(point1, point2)
+        if (thisDistance > maxDistance):
+            maxDistance = thisDistance
+            intercepts[0] = (point - 1) % len(trimmedMinorCircleX)
+            intercepts[1] = point
+    for point in range(intercepts[1], intercepts[0]):
+        ReorderedX.append(trimmedMinorCircleX[point])
+        ReorderedY.append(trimmedMinorCircleY[point])
+    return [ReorderedX, ReorderedY]
+    #cull the values outside of the domain and range
+    
+    return minorCircle
+def InCircle(majorRadius, majorCenter, point): # is this point on or in the circle?
+    return DistancePoints(point, majorCenter) <= majorRadius # is the distance of the center to the point less than or equal to the radius?
+def GetRadius(majorRadius, majorCenter):
+    return (circle[Domain][(len(circle[0]) - 1) // 2] - circle[Domain][0]) / 2
+def GetCenter(circle):
+    length = len(circle[0])
+    return [(circle[Domain][(length - 1) // 2] + circle[Domain][0]) / 2, (circle[Range][(length - 1) * 3 //4] + circle[Range][(length - 1) //4]) / 2]
+plt.axis([-1,1,-1,1])
+center = [0,0]
+radius = 1
 precision = 1000
 
 circle = GetCircleCoordinates(center, radius, precision)
 plotCircle(circle, "b-")
 
-centerGeoDesic = [8,8]
-radiusGeoDesic = 2
+centerGeoDesic = [1,-1 * math.sqrt(3)]
+radiusGeoDesic = math.sqrt(3)
 geoDesicCircle = GetCircleCoordinates(centerGeoDesic, radiusGeoDesic, precision)
+geoDesicCircle = TrimCircle(radius, center, geoDesicCircle)
 plotCircle(geoDesicCircle, "r-")
 
 plotLineSegment(centerGeoDesic, center, "g-")
-
 
 plt.show()
