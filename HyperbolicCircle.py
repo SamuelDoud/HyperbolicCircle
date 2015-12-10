@@ -1,6 +1,7 @@
 ﻿import matplotlib.pyplot as plt
 import math
 import decimal
+import cmath
 
 Domain = 0
 Range = 1
@@ -53,38 +54,17 @@ def Strip(circle, domainOrRange, min, max):
 def Distance(x1,y1,x2,y2):
     return math.sqrt(pow(x1-x2, 2) + pow(y1-y2,2))
 def QuadraticEquation(a,b,c):
-    discriminant = b**2-4*a*c
-    if (discriminant < 0):
-        return
+    discriminant = b**2 - 4*a*c
     plus = (-1*b + math.sqrt(discriminant)) / (2*a)
     negative = (-1*b - math.sqrt(discriminant)) / (2*a)
     return [plus, negative]
-def Select(AprimePlus, AprimeNegative,a, center, slope):
-    #returning the point wit the greatester distance from the center
-    #set the coordinates
-    Cx = center[Domain]
-    Cy = center[Range]
-    Ax = a[Domain]
-    Ay = a[Range]
-    AprimexPlus = AprimePlus[Domain]
-    AprimeyPlus = AprimePlus[Range]
-    AprimexNegative = AprimeNegative[Domain]
-    AprimeyNegative = AprimeNegative[Range]
-
-    if (Ax < Cx):
-        if (AprimexPlus < AprimexNegative):
-            return AprimePlus
-        return AprimeNegative
-    if (Ax > Cx):
-        if (AprimexPlus > AprimexNegative):
-            return AprimePlus
-        return AprimeNegative
-    return None
-
-
-
+def Select(SolutionsFromQuadratic, circleRadius, circleCenter):
+    for point in SolutionsFromQuadratic:
+        if InCircle(circleRadius, circleCenter, point):
+            return point
+    return none
 #coordinates are arrays of [x,y]
-def APrime(A, center, radius):
+def APrime(A, center, radius, centerMajor, radiusMajor):
     DistCA = DistancePoints(center, A)
     Cx = center[Domain]
     Cy = center[Range]
@@ -93,13 +73,12 @@ def APrime(A, center, radius):
     slope = Slope(A, center)
     yInt = YInt(center, slope)
     a = slope**2 + 1
-    b = -2 * (Cy*slope + Cx + slope * yInt)
+    b = (-2*Cx + -2*Cy*slope + 2 * slope * yInt)
     c = -1 * (((radius**2)/(DistCA))**2 - Cx**2 - Cy**2 - yInt**2 + (2*Cy*yInt))
     resultsX = QuadraticEquation(a,b,c)
     point1 = [resultsX[0], slope * resultsX[0] + yInt]
     point2 = [resultsX[1], slope * resultsX[1] + yInt]
-    return Select(point1,point2,A, center, slope)
-
+    return Select([point1, point2], radiusMajor, centerMajor)
 def plotCircle(circle, format):
     plt.plot(circle[Domain], circle[Range], format)
 def plotLineSegment(Start, End, format):
@@ -164,7 +143,7 @@ def Intercepts(thisRadius, thisCenter, otherCenter):
     resultsY.append(m * resultsX[0] + yInt)
     resultsY.append(m * resultsX[1] + yInt)
     return [[resultsX[0], resultsY[0]], [resultsX[1], resultsY[1]]]
-plt.axis([-1,1,-1,1])
+plt.axis([-5,5,-5,5])
 center = [0,0]
 radius = 1
 precision = 1000
@@ -178,19 +157,21 @@ plotCircle(circle, "b-")
 ints = Intercepts(radius, center, centerGeoDesic)
 point1 = ints[0]
 point2 = ints[1]
-a = ints[1]
-plt.plot([point2[Domain]],[point2[Range]], "ro") 
+a = [.5,.5]
 
+aPrime = APrime(a, centerGeoDesic, radiusGeoDesic, center, radius)
 
-aPrime = APrime(a, centerGeoDesic, radiusGeoDesic)
-plt.plot([a[Domain]],[a[Range]], "yo")
-plt.plot(aPrime[Domain], aPrime[Range], "ko")
 geoDesicCircle = GetCircleCoordinates(centerGeoDesic, radiusGeoDesic, precision)
 geoDesicCircle = TrimCircle(radius, center, geoDesicCircle)
 
 
+
 plotCircle(geoDesicCircle, "r-")
 plotLineSegment(centerGeoDesic, center, "g-")
+plotLineSegment(aPrime, centerGeoDesic, "m-")
+plt.plot([a[Domain]],[a[Range]], "yo")
+plt.plot(aPrime[Domain], aPrime[Range], "ko")
+plt.plot([point2[Domain]],[point2[Range]], "ro")
 
 
 plt.show()
