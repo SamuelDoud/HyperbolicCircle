@@ -59,58 +59,46 @@ def QuadraticEquation(a,b,c):
     plus = (-1*b + math.sqrt(discriminant)) / (2*a)
     negative = (-1*b - math.sqrt(discriminant)) / (2*a)
     return [plus, negative]
-def Select(AprimePlus, AprimeNegative, center, slope):
+def Select(AprimePlus, AprimeNegative,a, center, slope):
+    #returning the point wit the greatester distance from the center
     #set the coordinates
     Cx = center[Domain]
     Cy = center[Range]
+    Ax = a[Domain]
+    Ay = a[Range]
     AprimexPlus = AprimePlus[Domain]
     AprimeyPlus = AprimePlus[Range]
     AprimexNegative = AprimeNegative[Domain]
     AprimeyNegative = AprimeNegative[Range]
 
-    if (slope > 0):
-        if (AprimexNegative > Ax and AprimexNegative < Cx and AprimeyNegative > Ay and AprimeyNegative < Cx):
-            return [AprimexNegative, AprimeyNegative]
-        if (AprimexPlus > Ax and AprimexPlus < Cx and AprimexNegative > Ay and AprimexNegative < Cx):
-            return [AprimexPlus, AprimeyPlus]
-    if (slope < 0):
-        if (AprimexNegative > Cx and AprimexNegative < Ax and AprimeyNegative > Cy and AprimeyNegative > Ay):
-            return [AprimexNegative, AprimeyNegative]
-        if (AprimeyPlus > Cx and AprimexPlus < Ax and AprimexPlus > Cy and AprimexPlus < Ax):
-            return [AprimexPlus, AprimeyPlus]
-    return #nothing here
-#coordinates are arrays of [x,y]
-def APrime(a, center, radius):
-    Ax = a[Domain]
-    Ay = a[Range]
-    Cx = otherCenter[Domain]
-    Cy = otherCircle[Range]
-    m = (Cy - Ay)/(Cx - Ax)
+    if (Ax < Cx):
+        if (AprimexPlus < AprimexNegative):
+            return AprimePlus
+        return AprimeNegative
     if (Ax > Cx):
-        m = m * -1 # the slope is the negative in this case
-    yInt = -1 * (m * Ax - Ay)
-    CA = Distance(Cx, Cy, Ax, Ay)
-    #quadratic equation, see scanned notes
-    c = -1 * (radius**2 / CA - Cx**2 - Cy**2 + 2*Cy*yInt + yInt**2)
-    a = m+1
-    b = (2*b)-(2*(Cx+Cy))
-    results = QuadraticEquation(a,b,c)
-    #calculate Ay's from the two Ax's
-    AprimePlus = []
-    AprimeNegtive = []
-    AprimexPlus = results[0]
-    AprimexNegative = results[1]
-    AprimeyPlus = slope * AprimexPlus + yInt
-    AprimeyNegative = slope * AprimexNegative + yInt
-    AprimePlus[Domain] = AprimexPlus
-    AprimePlus[Range] = AprimeyPlus
-    AprimeNegative[Domain] = AprimexNegative
-    AprimeNegative[Range] = AprimeyNegative
-    #need a way to determine which value is correct
-    #A'x must be in the closed interval of <Ax, Cx>
-    #A'y must be in the closed interval of <Ay, Cy>
-    #<A, C> may switch if the slope is negative
-    return Select(AprimePlus, AprimeNegative, center, m)
+        if (AprimexPlus > AprimexNegative):
+            return AprimePlus
+        return AprimeNegative
+    return None
+
+
+
+#coordinates are arrays of [x,y]
+def APrime(A, center, radius):
+    DistCA = DistancePoints(center, A)
+    Cx = center[Domain]
+    Cy = center[Range]
+    Ax = A[Domain]
+    Ay = A[Range]
+    slope = Slope(A, center)
+    yInt = YInt(center, slope)
+    a = slope**2 + 1
+    b = -2 * (Cy*slope + Cx + slope * yInt)
+    c = -1 * (((radius**2)/(DistCA))**2 - Cx**2 - Cy**2 - yInt**2 + (2*Cy*yInt))
+    resultsX = QuadraticEquation(a,b,c)
+    point1 = [resultsX[0], slope * resultsX[0] + yInt]
+    point2 = [resultsX[1], slope * resultsX[1] + yInt]
+    return Select(point1,point2,A, center, slope)
 
 def plotCircle(circle, format):
     plt.plot(circle[Domain], circle[Range], format)
@@ -155,20 +143,54 @@ def GetRadius(majorRadius, majorCenter):
 def GetCenter(circle):
     length = len(circle[0])
     return [(circle[Domain][(length - 1) // 2] + circle[Domain][0]) / 2, (circle[Range][(length - 1) * 3 //4] + circle[Range][(length - 1) //4]) / 2]
+def Slope(point1, point2):
+    x1 = point1[Domain]
+    y1 = point1[Range]
+    x2 = point2[Domain]
+    y2 = point2[Range]
+    return (y2 - y1) / (x2 - x1)
+def YInt(point, slope):
+    x = point[Domain]
+    y = point[Range]
+    return (y - slope * x)
+def Intercepts(thisRadius, thisCenter, otherCenter):
+    m = Slope(thisCenter, otherCenter)
+    yInt = YInt(thisCenter, m)
+    a = (m**2+1)
+    b = 2*m*yInt
+    c = -1*(thisRadius**2 - yInt**2)
+    resultsX = QuadraticEquation(a,b,c)
+    resultsY = []
+    resultsY.append(m * resultsX[0] + yInt)
+    resultsY.append(m * resultsX[1] + yInt)
+    return [[resultsX[0], resultsY[0]], [resultsX[1], resultsY[1]]]
 plt.axis([-1,1,-1,1])
 center = [0,0]
 radius = 1
 precision = 1000
+centerGeoDesic = [1,-1 * math.sqrt(3)]
+radiusGeoDesic = math.sqrt(3)
+
+
 
 circle = GetCircleCoordinates(center, radius, precision)
 plotCircle(circle, "b-")
+ints = Intercepts(radius, center, centerGeoDesic)
+point1 = ints[0]
+point2 = ints[1]
+a = ints[1]
+plt.plot([point2[Domain]],[point2[Range]], "ro") 
 
-centerGeoDesic = [1,-1 * math.sqrt(3)]
-radiusGeoDesic = math.sqrt(3)
+
+aPrime = APrime(a, centerGeoDesic, radiusGeoDesic)
+plt.plot([a[Domain]],[a[Range]], "yo")
+plt.plot(aPrime[Domain], aPrime[Range], "ko")
 geoDesicCircle = GetCircleCoordinates(centerGeoDesic, radiusGeoDesic, precision)
 geoDesicCircle = TrimCircle(radius, center, geoDesicCircle)
-plotCircle(geoDesicCircle, "r-")
 
+
+plotCircle(geoDesicCircle, "r-")
 plotLineSegment(centerGeoDesic, center, "g-")
+
 
 plt.show()
